@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>AI Чат</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <button id="new-chat-btn" class="new-chat-btn">+ Новый чат</button>
+      <ul id="chat-list" class="chat-list"></ul>
+    </aside>
+
+    <main class="main">
+      <header class="header">
+        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Чаты">☰</button>
+        <span id="chat-title" class="chat-title">Чат</span>
+      </header>
+
+      <div id="messages" class="messages"></div>
+
+      <form id="message-form" class="message-form">
+        <input
+          id="message-input"
+          type="text"
+          placeholder="Напиши сообщение..."
+          autocomplete="off"
+        />
+        <button type="submit" aria-label="Отправить">➤</button>
+      </form>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

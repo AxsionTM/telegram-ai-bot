@@ -12,6 +12,7 @@ class Config:
     AI_PROVIDER: str
     AI_API_KEY: str
     AI_MODEL: str
+    WEBAPP_URL: str
 
 
 def load_config() -> Config:
@@ -27,6 +28,7 @@ def load_config() -> Config:
         AI_PROVIDER=os.getenv("AI_PROVIDER", "none"),
         AI_API_KEY=os.getenv("AI_API_KEY", ""),
         AI_MODEL=os.getenv("AI_MODEL", ""),
+        WEBAPP_URL=os.getenv("WEBAPP_URL", ""),
     )
 
 

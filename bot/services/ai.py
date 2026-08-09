@@ -84,19 +84,11 @@ def _send_message_sync(client, model: str, history: list, text: str):
 
 async def _get_gemini_response(text: str, user_id: int) -> str:
     history = _history.setdefault(user_id, [])
-    model = config.AI_MODEL or "gemini-3.5-flash-lite"
 
     try:
-        client = _get_gemini_client()
-        # SDK синхронный — вызываем его в отдельном потоке,
-        # чтобы не блокировать event loop бота.
-        response, updated_history = await asyncio.to_thread(
-            _send_message_sync, client, model, history, text
-        )
-
+        reply, updated_history = await generate_reply(history, text)
         _history[user_id] = updated_history[-_MAX_HISTORY_MESSAGES:]
-
-        return response.text
+        return reply
     except Exception:
         logger.exception("Ошибка при обращении к Gemini API")
         return (
@@ -104,6 +96,31 @@ async def _get_gemini_response(text: str, user_id: int) -> str:
             "Возможно, превышен бесплатный лимит запросов, неверен AI_API_KEY, "
             "либо модель в AI_MODEL устарела. Попробуй ещё раз чуть позже."
         )
+
+
+async def generate_reply(history: list, text: str) -> tuple[str, list]:
+    """
+    Универсальная функция общения с нейросетью — не привязана к telegram
+    user_id и не трогает внутреннее хранилище истории. Используется как
+    ботом (через _get_gemini_response), так и веб-бэкендом мини-приложения
+    (см. server/main.py), где история чата хранится в базе.
+
+    history — список сообщений в формате google-genai
+    (например [{"role": "user", "parts": [{"text": "..."}]}]).
+
+    Возвращает (текст_ответа, обновлённая_история). Бросает исключение
+    при ошибке — вызывающий код сам решает, как её обработать.
+    """
+    if config.AI_PROVIDER == "none":
+        return f"Эхо: {text}", history
+
+    client = _get_gemini_client()
+    model = config.AI_MODEL or "gemini-3.5-flash-lite"
+
+    response, updated_history = await asyncio.to_thread(
+        _send_message_sync, client, model, history, text
+    )
+    return response.text, updated_history
 
 
 def reset_history(user_id: int) -> None:
