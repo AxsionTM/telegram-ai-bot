@@ -15,6 +15,7 @@ const newChatBtn = document.getElementById("new-chat-btn");
 const chatTitleEl = document.getElementById("chat-title");
 const sidebarEl = document.getElementById("sidebar");
 const sidebarToggleEl = document.getElementById("sidebar-toggle");
+const sidebarBackdropEl = document.getElementById("sidebar-backdrop");
 
 async function api(path, options = {}) {
   const res = await fetch(API + path, {
@@ -31,6 +32,16 @@ async function api(path, options = {}) {
     throw new Error(err.detail || `Ошибка запроса (${res.status})`);
   }
   return res.json();
+}
+
+function closeSidebar() {
+  sidebarEl.classList.remove("open");
+  sidebarBackdropEl.classList.remove("visible");
+}
+
+function toggleSidebar() {
+  sidebarEl.classList.toggle("open");
+  sidebarBackdropEl.classList.toggle("visible");
 }
 
 function highlightActiveChat() {
@@ -52,7 +63,7 @@ function renderChatList(chats) {
     titleSpan.textContent = chat.title;
     titleSpan.addEventListener("click", () => {
       openChat(chat.id, chat.title);
-      sidebarEl.classList.remove("open");
+      closeSidebar();
     });
 
     const delBtn = document.createElement("button");
@@ -80,17 +91,63 @@ function renderChatList(chats) {
   highlightActiveChat();
 }
 
+function renderEmptyState() {
+  messagesEl.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "empty-state";
+  wrap.innerHTML = `
+    <div class="empty-orb"></div>
+    <p>Начни разговор — напиши что-нибудь внизу.<br />Нейросеть ответит прямо здесь.</p>
+  `;
+  messagesEl.appendChild(wrap);
+}
+
 function appendMessage(role, text) {
-  const div = document.createElement("div");
-  div.className = "message " + (role === "assistant" ? "message-bot" : "message-user");
-  div.textContent = text;
-  messagesEl.appendChild(div);
+  const row = document.createElement("div");
+  row.className = "message-row " + (role === "assistant" ? "row-assistant" : "row-user");
+
+  const avatar = document.createElement("div");
+  avatar.className = "avatar " + (role === "assistant" ? "avatar-assistant" : "avatar-user");
+  avatar.textContent = role === "assistant" ? "✨" : "🙂";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = text;
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  messagesEl.appendChild(row);
   messagesEl.scrollTop = messagesEl.scrollHeight;
-  return div;
+
+  return bubble;
+}
+
+function appendTypingIndicator() {
+  const row = document.createElement("div");
+  row.className = "message-row row-assistant";
+
+  const avatar = document.createElement("div");
+  avatar.className = "avatar avatar-assistant";
+  avatar.textContent = "✨";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div>`;
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  return bubble;
 }
 
 function renderMessages(messages) {
   messagesEl.innerHTML = "";
+  if (messages.length === 0) {
+    renderEmptyState();
+    return;
+  }
   messages.forEach((m) => appendMessage(m.role, m.content));
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
@@ -113,7 +170,7 @@ async function createChat() {
   const chat = await api("/chats", { method: "POST", body: JSON.stringify({}) });
   await refreshChatList();
   await openChat(chat.id, chat.title);
-  sidebarEl.classList.remove("open");
+  closeSidebar();
 }
 
 async function bootstrap() {
@@ -125,6 +182,7 @@ async function bootstrap() {
       await createChat();
     }
   } catch (err) {
+    renderEmptyState();
     appendMessage("assistant", "⚠️ Не удалось загрузить чаты: " + err.message);
   }
 }
@@ -135,17 +193,20 @@ formEl.addEventListener("submit", async (e) => {
   if (!text || !currentChatId) return;
 
   inputEl.value = "";
+  if (messagesEl.querySelector(".empty-state")) {
+    messagesEl.innerHTML = "";
+  }
   appendMessage("user", text);
-  const typingEl = appendMessage("assistant", "…");
+  const typingBubble = appendTypingIndicator();
 
   try {
     const { reply } = await api(`/chats/${currentChatId}/messages`, {
       method: "POST",
       body: JSON.stringify({ text }),
     });
-    typingEl.textContent = reply;
+    typingBubble.textContent = reply;
   } catch (err) {
-    typingEl.textContent = "⚠️ " + err.message;
+    typingBubble.textContent = "⚠️ " + err.message;
   } finally {
     messagesEl.scrollTop = messagesEl.scrollHeight;
     await refreshChatList(); // подхватить обновлённый заголовок чата
@@ -153,6 +214,7 @@ formEl.addEventListener("submit", async (e) => {
 });
 
 newChatBtn.addEventListener("click", createChat);
-sidebarToggleEl.addEventListener("click", () => sidebarEl.classList.toggle("open"));
+sidebarToggleEl.addEventListener("click", toggleSidebar);
+sidebarBackdropEl.addEventListener("click", closeSidebar);
 
 bootstrap();

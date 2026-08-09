@@ -1,63 +1,98 @@
-# Telegram AI Bot (учебный проект)
+<p align="center">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&pause=1000&color=8B7BFF&center=true&vCenter=true&width=600&height=60&lines=AI+CHAT+BOT;GEMINI+POWERED;TELEGRAM+MINI+APP" alt="AI Chat Bot animated title" />
+</p>
 
-Телеграм-бот на Python (aiogram 3) с подключённой нейросетью
-(Google Gemini, бесплатный тир с лимитами) — можно общаться прямо
-в чате с ботом, а можно открыть встроенное **Mini App**: веб-интерфейс
-в духе обычного AI-чата, с несколькими отдельными диалогами,
-переключением между ними и красивой темой под цвета Telegram.
-Проект задуман как учебный / для портфолио.
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:8B7BFF,100:37E0C9&height=120&section=header" />
+</p>
 
-## Что уже готово
+---
 
-- Базовая структура бота на **aiogram 3** (современный async-фреймворк,
-  стандарт де-факто для телеграм-ботов на Python).
-- Команды `/start`, `/help`, `/reset` (очищает историю диалога).
-- Общение с нейросетью **Google Gemini** через `bot/services/ai.py`.
-- Если `AI_PROVIDER=none` в `.env` — бот работает в режиме эхо-заглушки
-  (удобно для проверки, что сам бот запускается, без ключа API).
-- **Mini App** (`webapp/` + `server/`) — веб-чат с несколькими диалогами:
-  список чатов слева, создание/удаление чата, история хранится в SQLite,
-  открывается прямо внутри Telegram по кнопке из `/start`.
-- Конфигурация через `.env` (токен бота и ключ AI не попадают в git).
+<p align="center">
+<img src="https://img.shields.io/badge/Status-Учебный%20проект-8B7BFF?style=for-the-badge">
+<a href="https://github.com/ТВОЙ_GITHUB">
+<img src="https://img.shields.io/badge/GitHub-профиль-black?style=for-the-badge&logo=github">
+</a>
+</p>
 
-## Структура проекта
+---
+
+## 📦 О проекте
+
+**AI Chat Bot** — телеграм-бот на Python с подключённой нейросетью (Google Gemini,
+бесплатный тир с лимитами). Общаться можно двумя способами: прямо в чате с ботом
+или через встроенный **Telegram Mini App** — полноценный веб-чат с несколькими
+диалогами, боковой панелью и собственным дизайном, открывающийся прямо внутри Telegram.
+
+Сделан как учебный проект / для портфолио — чтобы разобраться в устройстве
+телеграм-ботов, работе с внешними AI API и Telegram Mini Apps.
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white">
+  <img src="https://img.shields.io/badge/aiogram-3.15-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white">
+  <img src="https://img.shields.io/badge/Google_Gemini-AI-8B7BFF?style=for-the-badge&logo=google&logoColor=white">
+  <img src="https://img.shields.io/badge/FastAPI-Mini%20App-009688?style=for-the-badge&logo=fastapi&logoColor=white">
+  <img src="https://img.shields.io/badge/SQLite-хранилище-37E0C9?style=for-the-badge&logo=sqlite&logoColor=white">
+</p>
+
+---
+
+## ✨ Функционал
+
+- 💬 **Чат с нейросетью** прямо в Telegram — просто пиши боту текстом
+- 🧠 **Google Gemini** в качестве AI-бэкенда, с историей диалога по каждому пользователю
+- 🧹 **`/reset`** — очистка истории диалога одной командой
+- 📱 **Telegram Mini App** — отдельный веб-интерфейс с несколькими чатами:
+  - боковая панель со списком диалогов, создание и удаление чатов
+  - тёмная дизайн-тема с градиентным акцентом, анимациями и индикатором «печатает»
+  - автоподстройка под цвета темы Telegram (светлая/тёмная)
+- 🔐 **Проверка подлинности запросов Mini App** по официальной схеме Telegram
+  (`initData` + HMAC-подпись на основе токена бота)
+- 🗃 История чатов Mini App хранится в **SQLite**, отдельно на пользователя
+- 🧩 Общая логика общения с нейросетью (`generate_reply`) переиспользуется
+  и ботом, и Mini App — код не дублируется
+
+---
+
+## 🏗 Архитектура проекта
 
 ```
 telegram-ai-bot/
 ├── bot/
-│   ├── main.py              # точка входа для бота, запуск polling
-│   ├── config.py            # чтение .env
+│   ├── main.py               # точка входа бота, запуск polling
+│   ├── config.py              # настройки из .env
 │   ├── handlers/
-│   │   └── common.py        # /start, /help, /reset, обработка текста
+│   │   └── common.py           # /start, /help, /reset, обработка текста
 │   └── services/
-│       └── ai.py            # общение с нейросетью (используется и ботом, и Mini App)
+│       └── ai.py                # общение с Gemini (используется ботом и Mini App)
 ├── server/
-│   ├── main.py               # FastAPI-бэкенд Mini App: API чатов + раздача фронтенда
-│   ├── db.py                 # SQLite-хранилище чатов и сообщений
-│   └── auth.py                # проверка подписи Telegram initData
+│   ├── main.py                # FastAPI-бэкенд Mini App: API чатов + статика
+│   ├── db.py                   # SQLite-хранилище чатов и сообщений
+│   └── auth.py                  # проверка подписи Telegram initData
 ├── webapp/
-│   ├── index.html            # разметка мини-приложения
-│   ├── style.css              # стили под тему Telegram
-│   └── app.js                  # логика: чаты, отправка сообщений, работа с API
-├── data/                       # тут появится app.db (в .gitignore)
-├── .env.example               # шаблон переменных окружения
+│   ├── index.html              # разметка мини-приложения
+│   ├── style.css                 # дизайн: тёмная тема, градиенты, анимации
+│   └── app.js                     # логика: чаты, отправка сообщений, API
+├── data/                          # SQLite-база (в .gitignore)
+├── .env.example                  # шаблон переменных окружения
 ├── .gitignore
 ├── requirements.txt
 └── README.md
 ```
 
-## Как запустить локально
+---
+
+## 🚀 Быстрый старт
 
 ### 1. Получить токен бота
 
-1. Открой в Telegram [@BotFather](https://t.me/BotFather).
-2. Команда `/newbot`, придумай имя и username (должен заканчиваться на `bot`).
-3. BotFather выдаст токен вида `123456789:AA...` — сохрани его.
+В Telegram написать [@BotFather](https://t.me/BotFather) → `/newbot` →
+задать имя и username → получить токен вида `123456789:AA...`.
 
 ### 2. Установить окружение
 
 ```bash
-git clone <ссылка-на-твой-репозиторий>
+git clone https://github.com/ТВОЙ_GITHUB/telegram-ai-bot.git
 cd telegram-ai-bot
 
 python -m venv venv
@@ -66,28 +101,23 @@ source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Настроить переменные окружения
+### 3. Настроить `.env`
 
 ```bash
 cp .env.example .env
 ```
 
-Открой `.env` и заполни:
-
-```
-BOT_TOKEN=твой_токен_от_botfather
+```env
+BOT_TOKEN=токен_от_botfather
 
 AI_PROVIDER=gemini
-AI_API_KEY=твой_ключ_от_google_ai_studio
+AI_API_KEY=ключ_от_google_ai_studio
 AI_MODEL=gemini-3.5-flash-lite
 ```
 
-Ключ для Gemini бесплатный, получить можно тут:
-[aistudio.google.com/apikey](https://aistudio.google.com/apikey)
-(нужен обычный Google-аккаунт, кредитка не требуется).
-
-Если пока не хочешь подключать нейросеть — оставь `AI_PROVIDER=none`,
-и бот будет отвечать эхом, без обращения к API.
+Ключ для Gemini бесплатный: [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+(обычный Google-аккаунт, карта не требуется). Если пока не хочешь подключать
+нейросеть — оставь `AI_PROVIDER=none`, бот будет отвечать эхом.
 
 ### 4. Запустить бота
 
@@ -95,121 +125,72 @@ AI_MODEL=gemini-3.5-flash-lite
 python -m bot.main
 ```
 
-Если всё ок, в консоли появится `Бот запускается...`, и бот начнёт
-отвечать в Telegram.
+---
 
-## Mini App: веб-чат с несколькими диалогами
+## 📱 Mini App
 
-Помимо общения прямо в чате с ботом, есть полноценный веб-интерфейс,
-который открывается внутри Telegram (это и называется Mini App /
-WebApp). Работает он как отдельный веб-сервис — нужно запустить его
-отдельным процессом, вторым терминалом, пока бот уже крутится в первом.
-
-### 1. Запустить сервер Mini App
+Веб-чат запускается отдельным процессом, вторым терминалом:
 
 ```bash
 uvicorn server.main:app --reload --port 8000
 ```
 
-Сейчас это доступно только на `http://localhost:8000` — Telegram такой
-адрес открыть не сможет, ему обязательно нужен публичный **https**.
+Telegram не откроет `localhost`, нужен публичный **https** — для локальной
+разработки используется туннель [ngrok](https://ngrok.com/download):
 
-### 2. Пробросить порт наружу через ngrok (для локальной разработки)
-
-1. Скачай [ngrok](https://ngrok.com/download), зарегистрируйся (бесплатно).
-2. Запусти:
 ```bash
 ngrok http 8000
 ```
-3. ngrok выдаст адрес вида `https://xxxx-xx-xx-xxx-xx.ngrok-free.app` —
-   скопируй его.
 
-### 3. Прописать адрес в `.env` и перезапустить бота
+Полученный адрес вписать в `.env`:
 
-```
-WEBAPP_URL=https://xxxx-xx-xx-xxx-xx.ngrok-free.app
+```env
+WEBAPP_URL=https://xxxx.ngrok-free.app
 ```
 
-Перезапусти `python -m bot.main` (он читает `.env` только при старте).
-Теперь под `/start` в боте появится кнопка **«💬 Открыть мини-приложение»** —
-внутри неё чат с боковой панелью, куда можно создавать новые диалоги
-и переключаться между ними.
+и перезапустить бота (`.env` читается только при старте). Под `/start`
+появится кнопка **«💬 Открыть мини-приложение»**.
 
-> Важно: адрес ngrok на бесплатном тарифе меняется при каждом
-> перезапуске — придётся каждый раз обновлять `WEBAPP_URL` в `.env`
-> и перезапускать бота. Для постоянного адреса нужен полноценный
-> деплой (см. раздел «Идеи для развития» ниже).
+> Адрес ngrok на бесплатном тарифе меняется при каждом перезапуске —
+> для постоянного адреса нужен полноценный деплой (см. «Планы» ниже).
 
-### Как это устроено
+---
 
-- `webapp/` — чистые HTML/CSS/JS без сборки: проще для портфолио,
-  не нужен Node.js/webpack. Telegram сам подставляет CSS-переменные
-  темы (`--tg-theme-bg-color` и т.д.), поэтому мини-приложение выглядит
-  «родным» и подстраивается под тёмную/светлую тему пользователя.
-- `server/main.py` — FastAPI-бэкенд: отдаёт файлы `webapp/` и API
-  (`/api/chats`, `/api/chats/{id}/messages`).
-- Каждый запрос от фронтенда несёт `initData` — подписанные Telegram
-  данные о пользователе. `server/auth.py` проверяет эту подпись
-  (HMAC на основе токена бота), чтобы никто не мог обратиться к API
-  от чужого имени.
-- `server/db.py` — чаты и сообщения хранятся в SQLite (`data/app.db`).
-- И бот, и Mini App используют одну и ту же функцию
-  `bot/services/ai.py::generate_reply()` для общения с Gemini —
-  логика подключения нейросети не дублируется.
+## 🧠 Нейросеть
 
-## Как залить на GitHub
+По умолчанию подключён **Google Gemini** через официальный SDK `google-genai`,
+модель `gemini-3.5-flash-lite`. Модели у Google меняются нередко — актуальный
+список смотри на [ai.google.dev/gemini-api/docs/models](https://ai.google.dev/gemini-api/docs/models).
 
-```bash
-git init
-git add .
-git commit -m "Initial commit: базовый эхо-бот на aiogram"
-git branch -M main
-git remote add origin <ссылка-на-твой-репозиторий>
-git push -u origin main
-```
-
-`.env` уже в `.gitignore`, так что токен не утечёт. В репозитории
-останется только `.env.example` — это нормальная практика.
-
-## Текущая нейросеть: Google Gemini
-
-Сейчас подключён **Google Gemini** (модель `gemini-3.5-flash-lite` по
-умолчанию) — бесплатный тир с лимитами по количеству запросов в
-минуту/день (актуальные цифры — [ai.google.dev/pricing](https://ai.google.dev/pricing)).
-
-Как это работает:
-- `bot/services/ai.py` вызывает Gemini через официальный SDK **google-genai**
-  (это актуальный пакет; старый `google-generativeai` объявлен Google
-  устаревшим и в проекте не используется).
-- `generate_reply()` — универсальная функция вызова нейросети, её
-  использует и телеграм-бот (история в памяти процесса), и Mini App
-  (история в SQLite) — код подключения к Gemini не дублируется.
-- `/reset` очищает историю конкретного пользователя в чате с ботом.
-- Если Gemini вернул ошибку (например, кончился лимит или устарела
-  модель) — ни бот, ни Mini App не падают, а вежливо сообщают об этом.
-
-> Модели у Google меняются довольно часто — если увидите ошибку вида
-> `model ... is not found`, значит модель в `AI_MODEL` устарела.
-> Актуальный список — [ai.google.dev/gemini-api/docs/models](https://ai.google.dev/gemini-api/docs/models).
-
-### Если захочешь сменить или добавить другую нейросеть
-
-Структуру легко расширить — просто добавь новую ветку в `get_ai_response()`
-по аналогии с `gemini`:
+Логика вызова нейросети вынесена в одну функцию (`bot/services/ai.py::generate_reply`),
+поэтому подключить другого провайдера просто — например:
 
 | Сервис | Особенности |
 |---|---|
-| **Groq** (console.groq.com) | Очень быстрый инференс, модели уровня Llama 3.1 / Mixtral. OpenAI-совместимый API (`pip install openai`). |
-| **OpenRouter** (openrouter.ai) | Агрегатор моделей, часть бесплатна (помечены `:free`). Тоже OpenAI-совместимый API. |
-| **Hugging Face Inference API** | Бесплатный тир, доступ ко множеству открытых моделей (`pip install huggingface_hub`). |
+| **Groq** | Очень быстрый инференс, модели уровня Llama 3.1 / Mixtral, OpenAI-совместимый API |
+| **OpenRouter** | Агрегатор моделей, часть бесплатна (`:free`), тоже OpenAI-совместимый API |
+| **Hugging Face Inference API** | Бесплатный тир, доступ к множеству открытых моделей |
 
-## Идеи для развития (для портфолио)
+---
 
-- Задеплоить и бота, и Mini App на бесплатном хостинге с постоянным
-  https-адресом (например, Render / Railway), чтобы не зависеть от
-  ngrok и не перезапускать всё вручную.
-- Добавить инлайн-кнопки для выбора "личности" бота или модели.
-- Сделать rate-limit на пользователя, чтобы не упереться в лимиты API.
-- В Mini App: стриминг ответа по мере генерации (сейчас ответ
-  показывается целиком, когда нейросеть закончит думать).
-- Логирование диалогов для последующего анализа.
+## 🗺 Планы по развитию
+
+- [ ] Деплой бота и Mini App с постоянным https-адресом (Render / Railway)
+- [ ] Стриминг ответа нейросети по мере генерации
+- [ ] Выбор модели/«личности» бота прямо в интерфейсе
+- [ ] Rate-limit на пользователя, чтобы не упираться в лимиты API
+- [ ] Логирование диалогов для анализа
+
+---
+
+## 📄 Лицензия
+
+Учебный проект, код открыт для ознакомления и переиспользования.
+
+<p align="center">
+  Made with 💜 by <a href="https://github.com/AxsionTM/telegram-ai-bot">Axsion</a>
+</p>
+
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:37E0C9,100:8B7BFF&height=100&section=footer" />
+</p>

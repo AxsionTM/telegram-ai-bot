@@ -5,18 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>AI Чат</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app">
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
     <aside class="sidebar" id="sidebar">
-      <button id="new-chat-btn" class="new-chat-btn">+ Новый чат</button>
+      <div class="brand">
+        <span class="brand-orb"></span>
+        <span class="brand-name">AI Чат</span>
+      </div>
+
+      <button id="new-chat-btn" class="new-chat-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+        </svg>
+        Новый чат
+      </button>
+
       <ul id="chat-list" class="chat-list"></ul>
     </aside>
 
     <main class="main">
       <header class="header">
-        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Чаты">☰</button>
+        <button id="sidebar-toggle" class="icon-btn" aria-label="Чаты">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
         <span id="chat-title" class="chat-title">Чат</span>
       </header>
 
@@ -29,7 +52,11 @@
           placeholder="Напиши сообщение..."
           autocomplete="off"
         />
-        <button type="submit" aria-label="Отправить">➤</button>
+        <button type="submit" class="send-btn" aria-label="Отправить">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+            <path d="M4 12L20 4L13 20L11 13L4 12Z" fill="currentColor" />
+          </svg>
+        </button>
       </form>
     </main>
   </div>
