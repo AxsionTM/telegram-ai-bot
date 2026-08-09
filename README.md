@@ -9,9 +9,13 @@
 ---
 
 <p align="center">
-<img src="https://img.shields.io/badge/Status-Учебный%20проект-8B7BFF?style=for-the-badge">
-<a href="https://github.com/ТВОЙ_GITHUB">
-<img src="https://img.shields.io/badge/GitHub-профиль-black?style=for-the-badge&logo=github">
+  <img src="https://wsrv.nl/?url=avatars.githubusercontent.com/u/146373364%3Fv%3D4&w=200&h=200&fit=cover&mask=circle" width="120">
+</p>
+<h2 align="center">👨‍💻 Maxsim (Axsion)</h2>
+<p align="center">
+<img src="https://img.shields.io/badge/Age-17-blue?style=for-the-badge">
+<a href="https://github.com/AxsionTM">
+<img src="https://img.shields.io/badge/GitHub-Axsion-black?style=for-the-badge&logo=github">
 </a>
 </p>
 
