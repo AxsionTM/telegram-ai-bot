@@ -5,6 +5,13 @@ tg?.expand();
 const initData = tg?.initData || "";
 const API = "/api";
 
+const SUGGESTIONS = [
+  { icon: "✨", text: "Объясни квантовую физику простыми словами" },
+  { icon: "✍️", text: "Напиши короткий рассказ про будущее" },
+  { icon: "💻", text: "Напиши код сортировки на Python" },
+  { icon: "💡", text: "Накидай идеи для пет-проекта" },
+];
+
 let currentChatId = null;
 
 const chatListEl = document.getElementById("chat-list");
@@ -12,10 +19,12 @@ const messagesEl = document.getElementById("messages");
 const formEl = document.getElementById("message-form");
 const inputEl = document.getElementById("message-input");
 const newChatBtn = document.getElementById("new-chat-btn");
-const chatTitleEl = document.getElementById("chat-title");
+const headerTitleEl = document.getElementById("header-title") || document.querySelector(".header-title");
 const sidebarEl = document.getElementById("sidebar");
 const sidebarToggleEl = document.getElementById("sidebar-toggle");
 const sidebarBackdropEl = document.getElementById("sidebar-backdrop");
+const closeBtnEl = document.getElementById("close-btn");
+const attachBtnEl = document.getElementById("attach-btn");
 
 async function api(path, options = {}) {
   const res = await fetch(API + path, {
@@ -91,35 +100,85 @@ function renderChatList(chats) {
   highlightActiveChat();
 }
 
-function renderEmptyState() {
-  messagesEl.innerHTML = "";
-  const wrap = document.createElement("div");
-  wrap.className = "empty-state";
-  wrap.innerHTML = `
-    <div class="empty-orb"></div>
-    <p>Начни разговор — напиши что-нибудь внизу.<br />Нейросеть ответит прямо здесь.</p>
-  `;
-  messagesEl.appendChild(wrap);
+function formatTime(createdAt) {
+  // createdAt приходит из SQLite как "YYYY-MM-DD HH:MM:SS" (UTC) —
+  // берём часы:минуты напрямую, без создания Date (проще и надёжнее для демо).
+  if (!createdAt || createdAt.length < 16) return "";
+  return createdAt.substring(11, 16);
 }
 
-function appendMessage(role, text) {
+function renderHero() {
+  messagesEl.innerHTML = "";
+
+  const hero = document.createElement("div");
+  hero.className = "hero";
+
+  const suggestionsHtml = SUGGESTIONS.map(
+    (s) => `
+      <button type="button" class="suggestion-card" data-text="${s.text.replace(/"/g, "&quot;")}">
+        <span class="suggestion-icon">${s.icon}</span>
+        <span class="suggestion-text">${s.text}</span>
+        <span class="suggestion-arrow">→</span>
+      </button>
+    `
+  ).join("");
+
+  hero.innerHTML = `
+    <div class="hero-orb"></div>
+    <h1 class="hero-title">AI Чат</h1>
+    <p class="hero-tagline">Ваш интеллектуальный помощник</p>
+    <p class="hero-subtext">Задавай вопросы, разбирай сложные темы, ищи идеи — начни с подсказки или напиши своё</p>
+    <div class="suggestions">${suggestionsHtml}</div>
+  `;
+
+  messagesEl.appendChild(hero);
+
+  hero.querySelectorAll(".suggestion-card").forEach((btn) => {
+    btn.addEventListener("click", () => sendMessage(btn.dataset.text));
+  });
+}
+
+function appendDateDivider(label = "Сегодня") {
+  const div = document.createElement("div");
+  div.className = "date-divider";
+  div.textContent = label;
+  messagesEl.appendChild(div);
+}
+
+function appendMessage(role, text, createdAt) {
   const row = document.createElement("div");
   row.className = "message-row " + (role === "assistant" ? "row-assistant" : "row-user");
 
   const avatar = document.createElement("div");
   avatar.className = "avatar " + (role === "assistant" ? "avatar-assistant" : "avatar-user");
-  avatar.textContent = role === "assistant" ? "✨" : "🙂";
+  avatar.textContent = role === "assistant" ? "✦" : "🙂";
+
+  const wrap = document.createElement("div");
+  wrap.className = "bubble-wrap";
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
   bubble.textContent = text;
 
+  const meta = document.createElement("div");
+  meta.className = "bubble-meta";
+  const time = formatTime(createdAt) || nowTime();
+  meta.innerHTML =
+    role === "user" ? `<span>${time}</span><span class="check">✓✓</span>` : `<span>${time}</span>`;
+
+  wrap.appendChild(bubble);
+  wrap.appendChild(meta);
   row.appendChild(avatar);
-  row.appendChild(bubble);
+  row.appendChild(wrap);
   messagesEl.appendChild(row);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 
   return bubble;
+}
+
+function nowTime() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
 }
 
 function appendTypingIndicator() {
@@ -128,14 +187,18 @@ function appendTypingIndicator() {
 
   const avatar = document.createElement("div");
   avatar.className = "avatar avatar-assistant";
-  avatar.textContent = "✨";
+  avatar.textContent = "✦";
+
+  const wrap = document.createElement("div");
+  wrap.className = "bubble-wrap";
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
   bubble.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div>`;
 
+  wrap.appendChild(bubble);
   row.appendChild(avatar);
-  row.appendChild(bubble);
+  row.appendChild(wrap);
   messagesEl.appendChild(row);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 
@@ -145,10 +208,11 @@ function appendTypingIndicator() {
 function renderMessages(messages) {
   messagesEl.innerHTML = "";
   if (messages.length === 0) {
-    renderEmptyState();
+    renderHero();
     return;
   }
-  messages.forEach((m) => appendMessage(m.role, m.content));
+  appendDateDivider();
+  messages.forEach((m) => appendMessage(m.role, m.content, m.created_at));
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
@@ -160,7 +224,7 @@ async function refreshChatList() {
 
 async function openChat(chatId, title) {
   currentChatId = chatId;
-  chatTitleEl.textContent = title;
+  document.querySelector(".header-title").textContent = title || "AI Чат";
   const messages = await api(`/chats/${chatId}/messages`);
   renderMessages(messages);
   highlightActiveChat();
@@ -182,20 +246,21 @@ async function bootstrap() {
       await createChat();
     }
   } catch (err) {
-    renderEmptyState();
-    appendMessage("assistant", "⚠️ Не удалось загрузить чаты: " + err.message);
+    renderHero();
   }
 }
 
-formEl.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const text = inputEl.value.trim();
+async function sendMessage(text) {
+  text = (text || "").trim();
   if (!text || !currentChatId) return;
 
   inputEl.value = "";
-  if (messagesEl.querySelector(".empty-state")) {
+
+  if (messagesEl.querySelector(".hero")) {
     messagesEl.innerHTML = "";
+    appendDateDivider();
   }
+
   appendMessage("user", text);
   const typingBubble = appendTypingIndicator();
 
@@ -211,6 +276,22 @@ formEl.addEventListener("submit", async (e) => {
     messagesEl.scrollTop = messagesEl.scrollHeight;
     await refreshChatList(); // подхватить обновлённый заголовок чата
   }
+}
+
+formEl.addEventListener("submit", (e) => {
+  e.preventDefault();
+  sendMessage(inputEl.value);
+});
+
+attachBtnEl.addEventListener("click", () => {
+  attachBtnEl.classList.add("shake");
+  setTimeout(() => attachBtnEl.classList.remove("shake"), 300);
+  tg?.showAlert?.("Загрузка файлов пока не поддерживается 🙂") ??
+    alert("Загрузка файлов пока не поддерживается 🙂");
+});
+
+closeBtnEl.addEventListener("click", () => {
+  tg?.close?.();
 });
 
 newChatBtn.addEventListener("click", createChat);

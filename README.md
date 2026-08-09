@@ -37,6 +37,19 @@
 
 ---
 
+## 📸 Скриншоты
+
+<p align="center">
+  <img src="docs/screenshots/hero-screen.png" width="49%" alt="Приветственный экран Mini App" />
+  <img src="docs/screenshots/chat-screen.png" width="49%" alt="Диалог с нейросетью в Mini App" />
+</p>
+
+<p align="center">
+  <sub>Слева — стартовый экран с подсказками, справа — диалог с генерацией кода на Python</sub>
+</p>
+
+---
+
 ## ✨ Функционал
 
 - 💬 **Чат с нейросетью** прямо в Telegram — просто пиши боту текстом
@@ -74,6 +87,8 @@ telegram-ai-bot/
 │   ├── style.css                 # дизайн: тёмная тема, градиенты, анимации
 │   └── app.js                     # логика: чаты, отправка сообщений, API
 ├── data/                          # SQLite-база (в .gitignore)
+├── docs/
+│   └── screenshots/                # скриншоты для README
 ├── .env.example                  # шаблон переменных окружения
 ├── .gitignore
 ├── requirements.txt
@@ -188,7 +203,7 @@ WEBAPP_URL=https://xxxx.ngrok-free.app
 Учебный проект, код открыт для ознакомления и переиспользования.
 
 <p align="center">
-  Made with 💜 by <a href="https://github.com/AxsionTM/telegram-ai-bot">Axsion</a>
+  Made with 💜 by <a href="https://github.com/AxsionTM">Axsion</a>
 </p>
 
 <p align="center">
