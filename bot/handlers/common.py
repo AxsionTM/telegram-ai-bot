@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message
 
-from bot.services.ai import get_ai_response
+from bot.services.ai import get_ai_response, reset_history
 
 router = Router(name="common")
 
@@ -31,8 +31,8 @@ async def cmd_help(message: Message) -> None:
 
 @router.message(Command("reset"))
 async def cmd_reset(message: Message) -> None:
-    # Заглушка под будущую историю диалога (context per user_id)
-    await message.answer("История диалога очищена (заглушка, пока хранить нечего).")
+    reset_history(message.from_user.id)
+    await message.answer("История диалога очищена.")
 
 
 @router.message(F.text)

@@ -2,8 +2,6 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
 
 from bot.config import config
 from bot.handlers.common import router as common_router
@@ -16,10 +14,12 @@ async def main() -> None:
     )
     logger = logging.getLogger(__name__)
 
-    bot = Bot(
-        token=config.BOT_TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-    )
+    # Без parse_mode по умолчанию: ответы нейросети могут содержать
+    # символы <, >, & (например код, HTML, математику), и если включить
+    # HTML-разметку глобально, Telegram будет пытаться парсить их как теги
+    # и падать с ошибкой "can't parse entities". Разметку включаем точечно,
+    # только там, где сами формируем безопасный текст (см. handlers).
+    bot = Bot(token=config.BOT_TOKEN)
     dp = Dispatcher()
 
     dp.include_router(common_router)

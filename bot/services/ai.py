@@ -1,65 +1,110 @@
 """
 Сервис для общения с нейросетью.
 
-Сейчас здесь просто заглушка (эхо-ответ), чтобы бот уже работал
-и его можно было залить на GitHub / протестировать.
+Сейчас подключён Google Gemini через официальный Google Gen AI SDK
+(пакет google-genai) — бесплатный тир с лимитами по запросам
+в минуту/день (см. https://ai.google.dev/pricing).
 
-Когда будете готовы подключать настоящую нейросеть, у вас есть
-несколько бесплатных (с лимитами) вариантов:
+Важно: раньше использовался пакет google-generativeai (import
+google.generativeai as genai) — он объявлен устаревшим Google'ом
+и заменён на единый google-genai SDK. Если увидите старые примеры
+в интернете с "import google.generativeai" — это уже legacy-путь.
 
-1. Groq (https://console.groq.com) — бесплатный API, очень быстрый,
-   модели llama-3.1, mixtral и т.д. Лимиты по запросам в минуту/день.
-   pip install groq
+Как получить ключ:
+1. Зайти на https://aistudio.google.com/apikey
+2. Нажать "Create API key", скопировать ключ.
+3. В .env указать:
+     AI_PROVIDER=gemini
+     AI_API_KEY=твой_ключ
+     AI_MODEL=gemini-3.5-flash-lite   (актуальная быстрая модель на момент написания)
 
-2. OpenRouter (https://openrouter.ai) — агрегатор моделей, есть
-   бесплатные модели (помечены ":free"), OpenAI-совместимый API.
-   pip install openai  (используется как клиент)
+Модели у Google меняются довольно часто (старые версии снимают
+с поддержки). Если бот вдруг начнёт падать с ошибкой вида
+"model ... is not found" — значит модель из .env устарела.
+Актуальный список смотрите на https://ai.google.dev/gemini-api/docs/models
 
-3. Hugging Face Inference API (https://huggingface.co/inference-api) —
-   бесплатный тир с лимитами по количеству запросов.
-   pip install huggingface_hub
-
-4. Google Gemini API (https://ai.google.dev) — есть бесплатный тир.
-   pip install google-generativeai
-
-Ниже — пример того, как будет выглядеть подключение через Groq
-(OpenAI-совместимый клиент). Раскомментируйте и адаптируйте, когда
-дойдёте до этого этапа, и добавьте AI_API_KEY / AI_MODEL в .env.
+Если позже захотите переключиться на другой бесплатный провайдер
+(Groq, OpenRouter, Hugging Face) — структура функции get_ai_response
+не изменится, поменяется только реализация внутри блока "gemini".
 """
+
+import asyncio
+import logging
 
 from bot.config import config
 
+logger = logging.getLogger(__name__)
+
 # Простое хранилище истории диалога в памяти (на время работы процесса).
 # Для портфолио этого достаточно; для продакшена — нужна БД (SQLite/Redis).
-_history: dict[int, list[dict]] = {}
+_history: dict[int, list] = {}
+
+_SYSTEM_PROMPT = "Ты дружелюбный ассистент в телеграм-боте. Отвечай кратко и по делу."
+
+# Сколько последних сообщений храним в истории на пользователя,
+# чтобы не разрастался промпт и не упирались в лимиты токенов.
+_MAX_HISTORY_MESSAGES = 20
+
+_gemini_client = None
+
+
+def _get_gemini_client():
+    """Ленивая инициализация клиента, чтобы бот не падал при импорте,
+    если библиотека ещё не установлена или ключ не задан."""
+    global _gemini_client
+    if _gemini_client is None:
+        from google import genai
+
+        _gemini_client = genai.Client(api_key=config.AI_API_KEY)
+    return _gemini_client
 
 
 async def get_ai_response(text: str, user_id: int) -> str:
     if config.AI_PROVIDER == "none":
-        # --- ЗАГЛУШКА ---
+        # --- ЗАГЛУШКА (используется, если AI_PROVIDER=none в .env) ---
         return f"Ты написал: «{text}»\n\n(нейросеть ещё не подключена, см. bot/services/ai.py)"
 
-    # --- ПРИМЕР БУДУЩЕЙ РЕАЛИЗАЦИИ (Groq / OpenRouter, OpenAI-совместимо) ---
-    #
-    # from openai import AsyncOpenAI
-    #
-    # client = AsyncOpenAI(
-    #     api_key=config.AI_API_KEY,
-    #     base_url="https://api.groq.com/openai/v1",  # для OpenRouter: https://openrouter.ai/api/v1
-    # )
-    #
-    # history = _history.setdefault(user_id, [
-    #     {"role": "system", "content": "Ты дружелюбный ассистент в телеграм-боте."}
-    # ])
-    # history.append({"role": "user", "content": text})
-    #
-    # response = await client.chat.completions.create(
-    #     model=config.AI_MODEL,  # например "llama-3.1-8b-instant"
-    #     messages=history,
-    # )
-    # reply = response.choices[0].message.content
-    # history.append({"role": "assistant", "content": reply})
-    #
-    # return reply
+    if config.AI_PROVIDER == "gemini":
+        return await _get_gemini_response(text, user_id)
 
-    return "AI_PROVIDER задан, но реализация ещё не подключена."
+    return f"Провайдер '{config.AI_PROVIDER}' пока не реализован в services/ai.py."
+
+
+def _send_message_sync(client, model: str, history: list, text: str):
+    from google.genai import types
+
+    chat = client.chats.create(
+        model=model,
+        history=history,
+        config=types.GenerateContentConfig(system_instruction=_SYSTEM_PROMPT),
+    )
+    response = chat.send_message(text)
+    return response, chat.get_history()
+
+
+async def _get_gemini_response(text: str, user_id: int) -> str:
+    history = _history.setdefault(user_id, [])
+    model = config.AI_MODEL or "gemini-3.5-flash-lite"
+
+    try:
+        client = _get_gemini_client()
+        # SDK синхронный — вызываем его в отдельном потоке,
+        # чтобы не блокировать event loop бота.
+        response, updated_history = await asyncio.to_thread(
+            _send_message_sync, client, model, history, text
+        )
+
+        _history[user_id] = updated_history[-_MAX_HISTORY_MESSAGES:]
+
+        return response.text
+    except Exception:
+        logger.exception("Ошибка при обращении к Gemini API")
+        return (
+            "Не получилось получить ответ от нейросети 😕\n"
+            "Возможно, превышен бесплатный лимит запросов, неверен AI_API_KEY, "
+            "либо модель в AI_MODEL устарела. Попробуй ещё раз чуть позже."
+        )
+
+
+def reset_history(user_id: int) -> None:
+    _history.pop(user_id, None)
